@@ -1,13 +1,11 @@
 pipeline {
     agent any
 
-        environment {
+    environment {
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-        
-       
         stage('Docker Build') {
             steps {
                 sh "docker build . -t dockerhub1126/hiring-app:$BUILD_NUMBER"
@@ -21,15 +19,15 @@ pipeline {
                 }
             }
         }
-        stage('Checkout K8S manifest SCM'){
+        stage('Checkout K8S manifest SCM') {
             steps {
-              git branch: 'main', url: 'https://github.com/betawins/Hiring-app-argocd.git'
+                git branch: 'main', url: 'https://github.com/betawins/Hiring-app-argocd.git'
             }
-        } 
-        stage('Update K8S manifest & push to Repo'){
+        }
+        stage('Update K8S manifest & push to Repo') {
             steps {
-                script{
-                   withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) { 
+                script {
+                    withCredentials([string(credentialsId: 'github', variable: 'GIT_TOKEN')]) {
                         sh '''
                         cat /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
                         sed -i "s/5/${BUILD_NUMBER}/g" /var/lib/jenkins/workspace/$JOB_NAME/dev/deployment.yaml
@@ -37,11 +35,11 @@ pipeline {
                         git add .
                         git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
                         git remote -v
-                        git push https://$GIT_USERNAME:$GIT_PASSWORD@github.com/betawins/Hiring-app-argocd.git main
-                        '''                        
-                      }
-                  }
-            }   
-        }
+                        git push https://$GIT_TOKEN@github.com/betawins/Hiring-app-argocd.git main
+                        '''
+                    }
+                }
             }
-} 
+        }
+    }
+}
